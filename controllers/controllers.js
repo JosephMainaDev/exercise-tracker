@@ -60,11 +60,7 @@ exports.user_log = async (req, res, next) => {
       limit: limit ? Number(limit) : null
     });
 
-    // const count = await Exercise.countDocuments({ userId: req.params.userId });
-    // count: `${count} exercises`
-    
     const count = exercises.length;
-
     const userLog = {
       _id: user._id,
       username: user.username,
@@ -80,7 +76,6 @@ exports.user_log = async (req, res, next) => {
 // POST exercise of a user
 exports.exercise_add = async (req, res, next) => {
   const user = await User.findById(req.body.userId);
-  
   if (!user) {
     return res.json({
       Error: `No user was found in Database with the ID: ${req.body.userId}`
@@ -90,22 +85,20 @@ exports.exercise_add = async (req, res, next) => {
   const exercise = new Exercise({
     userId: req.body.userId,
     description: req.body.description,
-    duration: req.body.duration,
+    duration: Number(req.body.duration),
     date: req.body.date ? new Date(req.body.date) : new Date()
   });
 
   try {
     const ex = await exercise.save();
 
-    const userExercise = {
-      _id: ex.userId,
+    return res.json({
+      _id: user._id,
       username: user.username,
-      date: ex.date,
-      duration: `${ex.duration} minutes`,
-      description: ex.description
-    };
-
-    return res.json(userExercise);
+      description: ex.description,
+      duration: Number(ex.duration),
+      date: (ex.date).toDateString()
+    });
   } catch (err) {
     next(err);
   }
