@@ -33,24 +33,27 @@ exports.users_list = async (req, res, next) => {
 // GET log of user exercises
 exports.user_log = async (req, res, next) => {
   try {
-    const user = await User.findById(req.params.userId);
-    const { from, to, limit } = req.query;
+    const { userId, from, to, limit } = req.query;
+    if (!userId) {
+      return res.json({
+        Error: "Please enter a valid userId."
+      });
+    }
+    const user = await User.findById(userId);
     if (!user) {
       return res.json({
-        Error: `There is no user in the database with the ID: ${req.params.userId}`
+        Error: `There is no user in the database with the ID: ${userId}`
       });
     }
 
-    const filters = {
-      userId: req.params.userId
-    };
+    const filters = { userId };
 
     if (from && !to) {
       filters.date = { $gte: new Date(from) };
     } else if (!from && to) {
       filters.date = { $lte: new Date(to) };
     } else if (from && to) {
-      filters.date = { $gte: new Date(from), $lte: new Date() };
+      filters.date = { $gte: new Date(from), $lte: new Date(to) };
     }
 
     const exercises = await Exercise.find(filters, "-_id -userId", {
@@ -62,12 +65,13 @@ exports.user_log = async (req, res, next) => {
     
     const count = exercises.length;
 
-    const userExercises = {
+    const userLog = {
+      _id: user._id,
       username: user.username,
-      exercises: exercises,
-      count: `${ count } exercise${ count > 1 ? "s" : ""}`
+      count: count,
+      log: exercises
     };
-    res.json(userExercises);
+    res.json(userLog);
   } catch (err) {
     next(err);
   }
@@ -75,9 +79,8 @@ exports.user_log = async (req, res, next) => {
 
 // POST exercise of a user
 exports.exercise_add = async (req, res, next) => {
-  const user = await User.findById(req.body.userId)
-    .lean()
-    .exec();
+  const user = await User.findById(req.body.userId);
+  
   if (!user) {
     return res.json({
       Error: `No user was found in Database with the ID: ${req.body.userId}`
@@ -93,10 +96,9 @@ exports.exercise_add = async (req, res, next) => {
 
   try {
     const ex = await exercise.save();
-    // date: ex.date.toDateString(),
 
     const userExercise = {
-      userId: ex.userId,
+      _id: ex.userId,
       username: user.username,
       date: ex.date,
       duration: `${ex.duration} minutes`,

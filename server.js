@@ -44,7 +44,7 @@ app.post('/api/exercise/new-user', user_create);
 
 app.get('/api/exercise/users', users_list);
 
-app.get('/api/exercise/log/:userId', user_log);
+app.get('/api/exercise/log', user_log);
 
 app.post('/api/exercise/add', exercise_add)
 
