@@ -59,7 +59,7 @@ exports.user_log = async (req, res, next) => {
     const exercises = await Exercise.find(filters, "-_id -userId", {
       limit: limit ? Number(limit) : null
     });
-    
+
     const count = exercises.length;
     const userLog = {
       _id: user._id,
@@ -85,20 +85,20 @@ exports.exercise_add = async (req, res, next) => {
   const exercise = new Exercise({
     userId: req.body.userId,
     description: req.body.description,
-    duration: req.body.duration,
+    duration: Number(req.body.duration),
     date: req.body.date ? new Date(req.body.date) : new Date()
   });
 
   try {
     const ex = await exercise.save();
-    const u = { ...user._doc };
-    const e = {
-      date: ex.date,
-      duration: ex.duration,
-      description: ex.description
-    };
-    
-    return res.json({ ...user._doc, ...e });
+
+    return res.json({
+      _id: user._id,
+      username: user.username,
+      description: ex.description,
+      duration: Number(ex.duration),
+      date: (ex.date).toDateString()
+    });
   } catch (err) {
     next(err);
   }
